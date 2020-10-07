@@ -23,6 +23,14 @@ type GitHubReleases struct {
 	Client             *github.Client // Github client used to make the calls to the github api.
 }
 
+func isRelase(client *github.Client, owner string, repo string, release string) bool {
+	_, _, err := client.Repositories.GetReleaseByTag(context.Background(), owner, repo, release)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 // New creates a new GitHubReleases
 func New(client *github.Client, owner string, repo string, release1 string, release2 string, filter string, includePreReleases bool) (*GitHubReleases, error) {
 	missingFields := []string{}
@@ -39,12 +47,23 @@ func New(client *github.Client, owner string, repo string, release1 string, rele
 		return nil, fmt.Errorf("Missing required field(s): %s", missingFields)
 	}
 
+	// Check if Release1 is a valid release
+	if !isRelase(client, owner, repo, release1) {
+		return nil, fmt.Errorf("'%s' is not a release on %s/%s", release1, owner, repo)
+	}
+
+	// if release2 is empty we will use the latest version
 	if release2 == "" {
 		latest, _, err := client.Repositories.GetLatestRelease(context.Background(), owner, repo)
 		if err != nil {
 			return nil, err
 		}
 		release2 = latest.GetTagName()
+	} else {
+		// Check if Release2 is a valid release
+		if !isRelase(client, owner, repo, release1) {
+			return nil, fmt.Errorf("'%s' is not a release on %s/%s", release2, owner, repo)
+		}
 	}
 
 	return &GitHubReleases{
