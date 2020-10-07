@@ -12,7 +12,7 @@ tc := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
 client := github.NewClient(tc)
 
 //
-ghr, err := releasediff.New(client, "goharbor", "harbor", "v2.0.2", "", "", false)
+ghr, err := releasediff.New(client, "goharbor", "harbor", "v2.0.2", "", "", false, false)
 if err != nil {
   panic(err)
 }
