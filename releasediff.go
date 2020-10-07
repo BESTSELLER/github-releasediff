@@ -24,7 +24,7 @@ type GitHubReleases struct {
 }
 
 // New ..
-func (ghr *GitHubReleases) New(client *github.Client) error {
+func (ghr GitHubReleases) New(client *github.Client) error {
 	missingFields := []string{}
 	if ghr.Owner == "" {
 		missingFields = append([]string{"Owner"}, missingFields...)
@@ -49,7 +49,7 @@ func (ghr *GitHubReleases) New(client *github.Client) error {
 }
 
 // Diff will fetch all releases until a specific release
-func (ghr *GitHubReleases) Diff() (int, *github.Response, error) {
+func (ghr GitHubReleases) Diff() (int, *github.Response, error) {
 	ctx := context.Background()
 	releases, response, err := getAllReleases(ctx, ghr.client, ghr.Owner, ghr.Repo, 1)
 
