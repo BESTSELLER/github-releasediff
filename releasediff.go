@@ -23,7 +23,10 @@ type GitHubReleases struct {
 	Client             *github.Client // Github client used to make the calls to the github api.
 }
 
-func isRelase(client *github.Client, owner string, repo string, release string) bool {
+func isRelase(client *github.Client, owner string, repo string, release string, verifyRelease bool) bool {
+	if verifyRelease {
+		return true
+	}
 	_, _, err := client.Repositories.GetReleaseByTag(context.Background(), owner, repo, release)
 	if err != nil {
 		return false
@@ -32,7 +35,7 @@ func isRelase(client *github.Client, owner string, repo string, release string) 
 }
 
 // New creates a new GitHubReleases
-func New(client *github.Client, owner string, repo string, release1 string, release2 string, filter string, includePreReleases bool) (*GitHubReleases, error) {
+func New(client *github.Client, owner string, repo string, release1 string, release2 string, filter string, includePreReleases bool, verifyRelease bool) (*GitHubReleases, error) {
 	missingFields := []string{}
 	if owner == "" {
 		missingFields = append([]string{"Owner"}, missingFields...)
@@ -48,7 +51,7 @@ func New(client *github.Client, owner string, repo string, release1 string, rele
 	}
 
 	// Check if Release1 is a valid release
-	if !isRelase(client, owner, repo, release1) {
+	if !isRelase(client, owner, repo, release1, verifyRelease) {
 		return nil, fmt.Errorf("'%s' is not a release on %s/%s", release1, owner, repo)
 	}
 
@@ -61,7 +64,7 @@ func New(client *github.Client, owner string, repo string, release1 string, rele
 		release2 = latest.GetTagName()
 	} else {
 		// Check if Release2 is a valid release
-		if !isRelase(client, owner, repo, release1) {
+		if !isRelase(client, owner, repo, release1, verifyRelease) {
 			return nil, fmt.Errorf("'%s' is not a release on %s/%s", release2, owner, repo)
 		}
 	}

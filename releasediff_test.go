@@ -17,6 +17,7 @@ func TestMain(m *testing.M) {
 	))
 	client := github.NewClient(tc)
 
+	repos := make(map[string]string)
 	repos["harbor"] = "v2.0.2"
 	repos["harbor-helm"] = "v1.5.0"
 
@@ -28,7 +29,7 @@ func TestMain(m *testing.M) {
 		go func(name string, version string) {
 			defer wg.Done()
 
-			ghr, err := New(client, "goharbor", name, version, "", "", false)
+			ghr, err := New(client, "goharbor", name, version, "", "", false, false)
 			if err != nil {
 				panic(err)
 			}
