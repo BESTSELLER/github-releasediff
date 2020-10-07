@@ -24,7 +24,7 @@ type GitHubReleases struct {
 }
 
 func isRelase(client *github.Client, owner string, repo string, release string, verifyRelease bool) bool {
-	if verifyRelease {
+	if !verifyRelease {
 		return true
 	}
 	_, _, err := client.Repositories.GetReleaseByTag(context.Background(), owner, repo, release)
