@@ -12,6 +12,8 @@ import (
 	"github.com/hashicorp/go-version"
 )
 
+const githubListOption := &github.ListOptions{Page: page, PerPage: 100}
+
 // GitHubReleases holds the two releases to compare
 type GitHubReleases struct {
 	Owner              string         // REQUIRED. Owner of the repo.
@@ -89,7 +91,7 @@ func (ghr GitHubReleases) Diff() (int, *github.Response, error) {
 // getAllReleases will fetch all releases
 func getAllReleases(ctx context.Context, client *github.Client, owner string, repo string, page int) ([]*github.RepositoryRelease, *github.Response, error) {
 
-	releases, response, err := client.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{Page: page, PerPage: 100})
+	releases, response, err := client.Repositories.ListReleases(ctx, owner, repo, &githubListOption)
 	if err != nil {
 		return releases, response, err
 	}
