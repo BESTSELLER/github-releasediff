@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 		go func(name string, version string) {
 			defer wg.Done()
 
-			ghr, err := New(client, "goharbor", name, version, "", "", false, false)
+			ghr, err := New(client, "goharbor", name, version, "", nil)
 			if err != nil {
 				panic(err)
 			}

@@ -34,8 +34,14 @@ func isRelase(client *github.Client, owner string, repo string, release string, 
 	return true
 }
 
+type Options struct {
+	Filter             string
+	IncludePreReleases bool
+	VerifyRelease      bool
+}
+
 // New creates a new GitHubReleases
-func New(client *github.Client, owner string, repo string, release1 string, release2 string, filter string, includePreReleases bool, verifyRelease bool) (*GitHubReleases, error) {
+func New(client *github.Client, owner string, repo string, release1 string, release2 string, options *Options) (*GitHubReleases, error) {
 	missingFields := []string{}
 	if owner == "" {
 		missingFields = append([]string{"Owner"}, missingFields...)
@@ -50,8 +56,17 @@ func New(client *github.Client, owner string, repo string, release1 string, rele
 		return nil, fmt.Errorf("Missing required field(s): %s", missingFields)
 	}
 
+	var verify bool
+	var prerelease bool
+	var filter string
+	if options != nil {
+		verify = options.VerifyRelease
+		prerelease = options.IncludePreReleases
+		filter = options.Filter
+	}
+
 	// Check if Release1 is a valid release
-	if !isRelase(client, owner, repo, release1, verifyRelease) {
+	if !isRelase(client, owner, repo, release1, verify) {
 		return nil, fmt.Errorf("'%s' is not a release on %s/%s", release1, owner, repo)
 	}
 
@@ -64,7 +79,7 @@ func New(client *github.Client, owner string, repo string, release1 string, rele
 		release2 = latest.GetTagName()
 	} else {
 		// Check if Release2 is a valid release
-		if !isRelase(client, owner, repo, release1, verifyRelease) {
+		if !isRelase(client, owner, repo, release1, verify) {
 			return nil, fmt.Errorf("'%s' is not a release on %s/%s", release2, owner, repo)
 		}
 	}
@@ -75,7 +90,7 @@ func New(client *github.Client, owner string, repo string, release1 string, rele
 		Release1:           release1,
 		Release2:           release2,
 		Filter:             filter,
-		IncludePreReleases: includePreReleases,
+		IncludePreReleases: prerelease,
 		Client:             client,
 	}, nil
 }
