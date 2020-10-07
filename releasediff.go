@@ -12,8 +12,6 @@ import (
 	"github.com/hashicorp/go-version"
 )
 
-const githubListOption := &github.ListOptions{Page: page, PerPage: 100}
-
 // GitHubReleases holds the two releases to compare
 type GitHubReleases struct {
 	Owner              string         // REQUIRED. Owner of the repo.
@@ -26,7 +24,7 @@ type GitHubReleases struct {
 }
 
 // New ..
-func (ghr GitHubReleases) New(client *github.Client) error {
+func (ghr *GitHubReleases) New(client *github.Client) error {
 	missingFields := []string{}
 	if ghr.Owner == "" {
 		missingFields = append([]string{"Owner"}, missingFields...)
@@ -51,7 +49,7 @@ func (ghr GitHubReleases) New(client *github.Client) error {
 }
 
 // Diff will fetch all releases until a specific release
-func (ghr GitHubReleases) Diff() (int, *github.Response, error) {
+func (ghr *GitHubReleases) Diff() (int, *github.Response, error) {
 	ctx := context.Background()
 	releases, response, err := getAllReleases(ctx, ghr.client, ghr.Owner, ghr.Repo, 1)
 
@@ -91,7 +89,8 @@ func (ghr GitHubReleases) Diff() (int, *github.Response, error) {
 // getAllReleases will fetch all releases
 func getAllReleases(ctx context.Context, client *github.Client, owner string, repo string, page int) ([]*github.RepositoryRelease, *github.Response, error) {
 
-	releases, response, err := client.Repositories.ListReleases(ctx, owner, repo, &githubListOption)
+	listOptions := &github.ListOptions{Page: page, PerPage: 100}
+	releases, response, err := client.Repositories.ListReleases(ctx, owner, repo, listOptions)
 	if err != nil {
 		return releases, response, err
 	}
