@@ -7,17 +7,15 @@ The github client used is [google/go-github](https://github.com/google/go-github
 ```go
 // Create a github client
 tc := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
-  &oauth2.Token{AccessToken: "<INSERT GITHUB TOKEN HERE>", TokenType: "token"},
+  &oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN"), TokenType: "token"},
 ))
 client := github.NewClient(tc)
 
-
-ghr := releasediff.GitHubReleases{
-  Owner:    "goharbor",
-  Repo:     "harbor",
-  Release1: "v2.0.2",
+//
+ghr, err := releasediff.New(client, "goharbor", "harbor", "v2.0.2", "", "", false)
+if err != nil {
+  panic(err)
 }
-ghr.New(client)
 
 diff, resp, err := ghr.Diff()
 if err != nil {
