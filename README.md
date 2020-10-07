@@ -2,9 +2,9 @@
 
 Simple go package to get number of releases between two releases.
 
+The github client used is [google/go-github](https://github.com/google/go-github)
 ## Usage
 ```go
-
 // Create a github client
 tc := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
   &oauth2.Token{AccessToken: "<INSERT GITHUB TOKEN HERE>", TokenType: "token"},
