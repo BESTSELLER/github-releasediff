@@ -20,38 +20,48 @@ type GitHubReleases struct {
 	Release2           string         // Tag name of the release you want to compare with. If empty, newest version will be used.
 	Filter             string         // Regex to to filter releases on. Keep empty if you want all releases.
 	IncludePreReleases bool           // Whether to include pre-releases or not. Default is false.
-	client             *github.Client // Github client used to make the calls to the github api.
+	Client             *github.Client // Github client used to make the calls to the github api.
 }
 
 // New ..
-func (ghr *GitHubReleases) New(client *github.Client) error {
+func New(client *github.Client, owner string, repo string, release1 string, release2 string, filter string, includePreReleases bool) (*GitHubReleases, error) {
 	missingFields := []string{}
-	if ghr.Owner == "" {
+	if owner == "" {
 		missingFields = append([]string{"Owner"}, missingFields...)
 	}
-	if ghr.Repo == "" {
+	if repo == "" {
 		missingFields = append([]string{"Repo"}, missingFields...)
 	}
-	if ghr.Release1 == "" {
+	if release1 == "" {
 		missingFields = append([]string{"Release1"}, missingFields...)
 	}
 	if len(missingFields) > 0 {
-		return fmt.Errorf("Missing required field(s): %s", missingFields)
+		return nil, fmt.Errorf("Missing required field(s): %s", missingFields)
 	}
 
-	latest, _, err := client.Repositories.GetLatestRelease(context.Background(), ghr.Owner, ghr.Repo)
-	if err != nil {
-		return err
+	if release2 == "" {
+		latest, _, err := client.Repositories.GetLatestRelease(context.Background(), owner, repo)
+		if err != nil {
+			return nil, err
+		}
+		release2 = latest.GetTagName()
 	}
-	ghr.Release2 = latest.GetTagName()
-	ghr.client = client
-	return nil
+
+	return &GitHubReleases{
+		Owner:              owner,
+		Repo:               repo,
+		Release1:           release1,
+		Release2:           release2,
+		Filter:             filter,
+		IncludePreReleases: includePreReleases,
+		Client:             client,
+	}, nil
 }
 
 // Diff will fetch all releases until a specific release
 func (ghr *GitHubReleases) Diff() (int, *github.Response, error) {
 	ctx := context.Background()
-	releases, response, err := getAllReleases(ctx, ghr.client, ghr.Owner, ghr.Repo, 1)
+	releases, response, err := getAllReleases(ctx, ghr.Client, ghr.Owner, ghr.Repo, 1)
 
 	if ghr.Filter != "" {
 		releases = filterReleases(releases, ghr.Filter)
