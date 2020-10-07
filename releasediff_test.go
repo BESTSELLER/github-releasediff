@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 	repos["harbor"] = "v2.0.2"
 	repos["harbor-helm"] = "v1.5.0"
 
-	// repos := []string{"harbor", "harbor-helm"}
+	var rate github.Rate
 	var wg sync.WaitGroup
 	for name, version := range repos {
 
@@ -39,10 +39,11 @@ func TestMain(m *testing.M) {
 				panic(err)
 			}
 			fmt.Printf("There are %d releases between %s and %s\n", diff, ghr.Release1, ghr.Release2)
-			fmt.Printf("%v\n", resp.Rate)
+			rate = resp.Rate
 
 		}(name, version)
 
 	}
 	wg.Wait()
+	fmt.Printf("%v\n", rate)
 }

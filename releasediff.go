@@ -23,21 +23,11 @@ type GitHubReleases struct {
 	Client             *github.Client // Github client used to make the calls to the github api.
 }
 
-func isRelase(client *github.Client, owner string, repo string, release string, verifyRelease bool) bool {
-	if !verifyRelease {
-		return true
-	}
-	_, _, err := client.Repositories.GetReleaseByTag(context.Background(), owner, repo, release)
-	if err != nil {
-		return false
-	}
-	return true
-}
-
+// Options is optional stuff that can be sent when calling "New"
 type Options struct {
-	Filter             string
-	IncludePreReleases bool
-	VerifyRelease      bool
+	Filter             string // Regex to to filter releases on. Keep empty if you want all releases.
+	IncludePreReleases bool   // Whether to include pre-releases or not. Default is false.
+	VerifyRelease      bool   // Whether to verify that the provided versions exists as a release.
 }
 
 // New creates a new GitHubReleases
@@ -178,4 +168,16 @@ func removePreReleases(releases []*github.RepositoryRelease) []*github.Repositor
 		}
 	}
 	return nonPreReleases
+}
+
+// isRelease check if provided version is a release
+func isRelase(client *github.Client, owner string, repo string, release string, verifyRelease bool) bool {
+	if !verifyRelease {
+		return true
+	}
+	_, _, err := client.Repositories.GetReleaseByTag(context.Background(), owner, repo, release)
+	if err != nil {
+		return false
+	}
+	return true
 }
