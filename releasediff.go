@@ -23,7 +23,7 @@ type GitHubReleases struct {
 	Client             *github.Client // Github client used to make the calls to the github api.
 }
 
-// New ..
+// New creates a new GitHubReleases
 func New(client *github.Client, owner string, repo string, release1 string, release2 string, filter string, includePreReleases bool) (*GitHubReleases, error) {
 	missingFields := []string{}
 	if owner == "" {
