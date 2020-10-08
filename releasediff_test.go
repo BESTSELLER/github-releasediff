@@ -18,7 +18,7 @@ func TestMain(m *testing.M) {
 	client := github.NewClient(tc)
 
 	repos := make(map[string]string)
-	repos["ingress-nginx"] = "controller-v0.40.2"
+	repos["ingress-nginx"] = "controller-0.31.0"
 
 	var rate github.Rate
 	var wg sync.WaitGroup
@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 		go func(name string, version string) {
 			defer wg.Done()
 
-			ghr, resp, err := New(client, "kubernetes", name, "controller-0.31.0", "controller-v0.34.1", &Options{Filter: "^controller-.*$", VerifyRelease: false})
+			ghr, resp, err := New(client, "kubernetes", name, version, "", &Options{Filter: "^controller-.*$", VerifyRelease: false})
 			if err != nil {
 				panic(err)
 			}

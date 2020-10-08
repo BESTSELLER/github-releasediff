@@ -88,6 +88,11 @@ func New(client *github.Client, owner string, repo string, release1 string, rele
 	if !isRelase(client, owner, repo, release1, verify) {
 		return nil, nil, fmt.Errorf("'%s' is not a release on %s/%s", release1, owner, repo)
 	}
+
+	if len(releases) == 0 {
+		return nil, nil, fmt.Errorf("There is no releases")
+	}
+
 	versions := getVersions(releases)
 
 	// if release2 is empty we will use the latest version
