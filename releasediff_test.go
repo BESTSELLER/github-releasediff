@@ -18,8 +18,7 @@ func TestMain(m *testing.M) {
 	client := github.NewClient(tc)
 
 	repos := make(map[string]string)
-	repos["harbor"] = "v2.0.2"
-	repos["harbor-helm"] = "v1.5.0"
+	repos["ingress-nginx"] = "controller-v0.40.2"
 
 	var rate github.Rate
 	var wg sync.WaitGroup
@@ -29,15 +28,12 @@ func TestMain(m *testing.M) {
 		go func(name string, version string) {
 			defer wg.Done()
 
-			ghr, err := New(client, "goharbor", name, version, "", nil)
+			ghr, resp, err := New(client, "kubernetes", name, "controller-0.31.0", "controller-v0.34.1", &Options{Filter: "^controller-.*$", VerifyRelease: false})
 			if err != nil {
 				panic(err)
 			}
 
-			diff, resp, err := ghr.Diff()
-			if err != nil {
-				panic(err)
-			}
+			diff := ghr.Diff()
 			fmt.Printf("There are %d releases between %s and %s\n", diff, ghr.Release1, ghr.Release2)
 			rate = resp.Rate
 
