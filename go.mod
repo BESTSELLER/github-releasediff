@@ -8,4 +8,4 @@ require (
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
 )
 
-replace github.com/hashicorp/go-version v1.2.1 => github.com/BESTSELLER/go-version v1.2.4
+replace github.com/hashicorp/go-version => github.com/BESTSELLER/go-version v1.2.5

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/google/go-github/v32/github"
 	"github.com/hashicorp/go-version"
@@ -14,39 +15,46 @@ import (
 
 // GitHubReleases holds the two releases to compare
 type GitHubReleases struct {
-	Owner              string             // REQUIRED. Owner of the repo.
-	Repo               string             // REQUIRED. Name of the repo.
-	Release1           string             // REQUIRED. Tag name of the release you want to check.
-	Release2           string             // Tag name of the release you want to compare with. If empty, newest version will be used.
-	Filter             string             // Regex to to filter releases on. Keep empty if you want all releases.
-	IncludePreReleases bool               // Whether to include pre-releases or not. Default is false.
-	Client             *github.Client     // Github client used to make the calls to the github api.
-	Versions           []*version.Version // Ordered list of all versions
+	Owner    string             // REQUIRED. Owner of the repo.
+	Repo     string             // REQUIRED. Name of the repo.
+	Release  string             // REQUIRED. Tag name of the release you want to check.
+	Client   *github.Client     // Github client used to make the calls to the github api.
+	Versions []*version.Version // Ordered list of all versions.
+	Options  *Options           // Optional options
 }
 
 // Options is optional stuff that can be sent when calling "New"
 type Options struct {
+	Release            string // Tag name of the release you want to compare with. If empty, newest version will be used.
 	Filter             string // Regex to to filter releases on. Keep empty if you want all releases.
 	IncludePreReleases bool   // Whether to include pre-releases or not. Default is false.
 	VerifyRelease      bool   // Whether to verify that the provided versions exists as a release.
 }
 
-func getVersions(releases []*github.RepositoryRelease) []*version.Version {
+func getVersions(releases []*github.RepositoryRelease) ([]*version.Version, error) {
+	errorList := []string{}
 	versions := make([]*version.Version, len(releases))
 	for i, raw := range releases {
 		v, err := version.NewVersion(raw.GetTagName())
 		if err != nil {
 			fmt.Println(err)
+			errorList = append(errorList, fmt.Sprintf("%s", err))
+			continue
 		}
 		versions[i] = v
 	}
+
+	if len(errorList) > 0 {
+		return nil, fmt.Errorf("You have the following errors: %s", strings.Join(errorList, "\n"))
+	}
+
 	sort.Sort(version.Collection(versions))
 
-	return versions
+	return versions, nil
 }
 
 // New creates a new GitHubReleases
-func New(client *github.Client, owner string, repo string, release1 string, release2 string, options *Options) (*GitHubReleases, *github.Response, error) {
+func New(client *github.Client, owner string, repo string, release string, options *Options) (*GitHubReleases, *github.Response, error) {
 	missingFields := []string{}
 	if owner == "" {
 		missingFields = append([]string{"Owner"}, missingFields...)
@@ -54,20 +62,15 @@ func New(client *github.Client, owner string, repo string, release1 string, rele
 	if repo == "" {
 		missingFields = append([]string{"Repo"}, missingFields...)
 	}
-	if release1 == "" {
+	if release == "" {
 		missingFields = append([]string{"Release1"}, missingFields...)
 	}
 	if len(missingFields) > 0 {
 		return nil, nil, fmt.Errorf("Missing required field(s): %s", missingFields)
 	}
 
-	var verify bool
-	var prerelease bool
-	var filter string
-	if options != nil {
-		verify = options.VerifyRelease
-		prerelease = options.IncludePreReleases
-		filter = options.Filter
+	if options == nil {
+		options = &Options{}
 	}
 
 	ctx := context.Background()
@@ -76,50 +79,52 @@ func New(client *github.Client, owner string, repo string, release1 string, rele
 		return nil, nil, err
 	}
 
-	if filter != "" {
-		releases = filterReleases(releases, filter)
-	}
+	releases = filterReleases(releases, options.Filter)
 
-	if !prerelease {
+	if !options.IncludePreReleases {
 		releases = removePreReleases(releases)
 	}
 
 	// Check if Release1 is a valid release
-	if !isRelase(client, owner, repo, release1, verify) {
-		return nil, nil, fmt.Errorf("'%s' is not a release on %s/%s", release1, owner, repo)
+	if !isRelase(client, owner, repo, release, options.VerifyRelease) {
+		return nil, nil, fmt.Errorf("'%s' is not a release on %s/%s", release, owner, repo)
 	}
 
 	if len(releases) == 0 {
 		return nil, nil, fmt.Errorf("There is no releases")
 	}
 
-	versions := getVersions(releases)
+	versions, err := getVersions(releases)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(versions) == 0 {
+		return nil, nil, fmt.Errorf("No versions was returned")
+	}
 
 	// if release2 is empty we will use the latest version
-	if release2 == "" {
-		release2 = versions[len(versions)-1].Original()
+	if options.Release == "" {
+		options.Release = versions[len(versions)-1].Original()
 	} else {
-		// Check if Release2 is a valid release
-		if !isRelase(client, owner, repo, release1, verify) {
-			return nil, nil, fmt.Errorf("'%s' is not a release on %s/%s", release2, owner, repo)
+		// Check if options.Release is a valid release
+		if !isRelase(client, owner, repo, release, options.VerifyRelease) {
+			return nil, nil, fmt.Errorf("'%s' is not a release on %s/%s", options.Release, owner, repo)
 		}
 	}
 
 	return &GitHubReleases{
-		Owner:              owner,
-		Repo:               repo,
-		Release1:           release1,
-		Release2:           release2,
-		Filter:             filter,
-		IncludePreReleases: prerelease,
-		Client:             client,
-		Versions:           versions,
+		Owner:    owner,
+		Repo:     repo,
+		Release:  release,
+		Client:   client,
+		Versions: versions,
+		Options:  options,
 	}, response, nil
 }
 
 // Diff will fetch all releases until a specific release
 func (ghr *GitHubReleases) Diff() int {
-	if ghr.Release1 == ghr.Release2 {
+	if ghr.Release == ghr.Options.Release {
 		return 0
 	}
 
@@ -128,11 +133,11 @@ func (ghr *GitHubReleases) Diff() int {
 		if indexesFound == 2 {
 			break
 		}
-		if ghr.Versions[i].Original() == ghr.Release1 {
+		if ghr.Versions[i].Original() == ghr.Release {
 			index1 = i
 			continue
 		}
-		if ghr.Versions[i].Original() == ghr.Release2 {
+		if ghr.Versions[i].Original() == ghr.Options.Release {
 			index2 = i
 			continue
 		}

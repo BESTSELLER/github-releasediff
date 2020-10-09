@@ -28,13 +28,13 @@ func TestMain(m *testing.M) {
 		go func(name string, version string) {
 			defer wg.Done()
 
-			ghr, resp, err := New(client, "kubernetes", name, version, "", &Options{Filter: "^controller-.*$", VerifyRelease: false})
+			ghr, resp, err := New(client, "kubernetes", name, version, &Options{Filter: "^controller-.*$", VerifyRelease: false})
 			if err != nil {
 				panic(err)
 			}
 
 			diff := ghr.Diff()
-			fmt.Printf("There are %d releases between %s and %s\n", diff, ghr.Release1, ghr.Release2)
+			fmt.Printf("There are %d releases between %s and %s\n", diff, ghr.Release, ghr.Options.Release)
 			rate = resp.Rate
 
 		}(name, version)
