@@ -37,7 +37,6 @@ func getVersions(releases []*github.RepositoryRelease) ([]*version.Version, erro
 	for i, raw := range releases {
 		v, err := version.NewVersion(raw.GetTagName())
 		if err != nil {
-			fmt.Println(err)
 			errorList = append(errorList, fmt.Sprintf("%s", err))
 			continue
 		}
