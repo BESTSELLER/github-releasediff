@@ -28,6 +28,7 @@ type Options struct {
 	Release            string // Tag name of the release you want to compare with. If empty, newest version will be used.
 	Filter             string // Regex to to filter releases on. Keep empty if you want all releases.
 	IncludePreReleases bool   // Whether to include pre-releases or not. Default is false.
+	IncludeDrafts      bool   // Whether to include drafts or not. Default is false.
 	VerifyRelease      bool   // Whether to verify that the provided versions exists as a release.
 }
 
@@ -78,11 +79,7 @@ func New(client *github.Client, owner string, repo string, release string, optio
 		return nil, nil, err
 	}
 
-	releases = filterReleases(releases, options.Filter)
-
-	if !options.IncludePreReleases {
-		releases = removePreReleases(releases)
-	}
+	releases = filterReleases(releases, options.Filter, !options.IncludePreReleases, !options.IncludeDrafts)
 
 	// Check if Release1 is a valid release
 	if !isRelase(client, owner, repo, release, options.VerifyRelease) {
@@ -170,7 +167,7 @@ func getAllReleases(ctx context.Context, client *github.Client, owner string, re
 }
 
 // filterReleases will filter out where tag_name does not contains "filter"
-func filterReleases(releases []*github.RepositoryRelease, filter string) []*github.RepositoryRelease {
+func filterReleases(releases []*github.RepositoryRelease, filter string, removePreReleases bool, removeDrafts bool) []*github.RepositoryRelease {
 	if filter == "" {
 		return releases
 	}
@@ -178,23 +175,12 @@ func filterReleases(releases []*github.RepositoryRelease, filter string) []*gith
 	var filteredReleases []*github.RepositoryRelease
 	for _, v := range releases {
 		matched, _ := regexp.MatchString(filter, v.GetTagName())
-		if matched {
+		if matched || (removePreReleases && v.GetPrerelease() == false) || (removeDrafts && v.GetDraft() == false) {
 			filteredReleases = append(filteredReleases, v)
 		}
 	}
 
 	return filteredReleases
-}
-
-// removePreReleases removes all pre-releases
-func removePreReleases(releases []*github.RepositoryRelease) []*github.RepositoryRelease {
-	var nonPreReleases []*github.RepositoryRelease
-	for _, v := range releases {
-		if v.GetPrerelease() == false {
-			nonPreReleases = append(nonPreReleases, v)
-		}
-	}
-	return nonPreReleases
 }
 
 // isRelease check if provided version is a release
