@@ -168,14 +168,16 @@ func getAllReleases(ctx context.Context, client *github.Client, owner string, re
 
 // filterReleases will filter out where tag_name does not contains "filter"
 func filterReleases(releases []*github.RepositoryRelease, filter string, removePreReleases bool, removeDrafts bool) []*github.RepositoryRelease {
-	if filter == "" {
-		return releases
-	}
 
 	var filteredReleases []*github.RepositoryRelease
+
 	for _, v := range releases {
-		matched, _ := regexp.MatchString(filter, v.GetTagName())
-		if matched || (removePreReleases && v.GetPrerelease() == false) || (removeDrafts && v.GetDraft() == false) {
+		var matched bool
+		if filter == "" {
+			matched = true
+		}
+		matched, _ = regexp.MatchString(filter, v.GetTagName())
+		if matched && v.GetPrerelease() == !removePreReleases && v.GetDraft() == !removeDrafts {
 			filteredReleases = append(filteredReleases, v)
 		}
 	}
@@ -189,8 +191,5 @@ func isRelase(client *github.Client, owner string, repo string, release string, 
 		return true
 	}
 	_, _, err := client.Repositories.GetReleaseByTag(context.Background(), owner, repo, release)
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
