@@ -11,33 +11,60 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func TestMain(m *testing.M) {
+type TestCase struct {
+	Owner         string
+	Repo          string
+	Filter        string
+	VerifyRelease bool
+	Release       string
+}
+
+func TestMain(t *testing.T) {
 	tc := oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN"), TokenType: "token"},
 	))
 	client := github.NewClient(tc)
 
-	repos := make(map[string]string)
-	repos["ingress-nginx"] = "controller-0.31.0"
+	testCases := []TestCase{
+		{
+			Owner:         "kubernetes",
+			Repo:          "ingress-nginx",
+			Filter:        "^controller-.*$",
+			VerifyRelease: false,
+			Release:       "controller-0.31.0",
+		},
+		{
+			Owner:         "BESTSELLER",
+			Repo:          "harpocrates",
+			VerifyRelease: false,
+			Release:       "1.7.6",
+		},
+		{
+			Owner:         "hashicorp",
+			Repo:          "vault",
+			VerifyRelease: false,
+			Release:       "v1.10.3",
+		},
+	}
 
 	var rate github.Rate
 	var wg sync.WaitGroup
-	for name, version := range repos {
+	for _, tc := range testCases {
 
 		wg.Add(1)
-		go func(name string, version string) {
+		go func(testCase TestCase) {
 			defer wg.Done()
 
-			ghr, resp, err := New(client, "kubernetes", name, version, &Options{Filter: "^controller-.*$", VerifyRelease: false})
+			ghr, resp, err := New(client, testCase.Owner, testCase.Repo, testCase.Release, &Options{Filter: testCase.Filter, VerifyRelease: testCase.VerifyRelease})
 			if err != nil {
 				panic(err)
 			}
 
 			diff := ghr.Diff()
-			fmt.Printf("There are %d releases between %s and %s\n", diff, ghr.Release, ghr.Options.Release)
+			fmt.Printf("%s/%s:\tThere are %d releases between %s and %s\n", testCase.Owner, testCase.Repo, diff, ghr.Release, ghr.Options.Release)
 			rate = resp.Rate
 
-		}(name, version)
+		}(tc)
 
 	}
 	wg.Wait()
