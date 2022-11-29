@@ -127,8 +127,13 @@ func New(client *github.Client, owner string, repo string, release string, optio
 	}, response, nil
 }
 
+func (ghr *GitHubReleases) Diff() int {
+	diff, _ := ghr.DiffWithReleaseNotes()
+	return diff
+}
+
 // Diff will fetch all releases until a specific release
-func (ghr *GitHubReleases) Diff() (int, []ReleaseNote) {
+func (ghr *GitHubReleases) DiffWithReleaseNotes() (int, []ReleaseNote) {
 	releaseNotes := []ReleaseNote{}
 	if ghr.Release == ghr.Options.Release {
 		return 0, nil

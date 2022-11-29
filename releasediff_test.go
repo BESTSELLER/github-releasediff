@@ -59,9 +59,8 @@ func TestMain(t *testing.T) {
 				panic(err)
 			}
 
-			diff, releaseNotes := ghr.Diff()
+			diff := ghr.Diff()
 			t.Logf("%s/%s:\tThere are %d releases between %s and %s\n", testCase.Owner, testCase.Repo, diff, ghr.Release, ghr.Options.Release)
-			t.Logf("This is the release notes: \n%v", releaseNotes)
 			rate = resp.Rate
 
 		}(tc)
