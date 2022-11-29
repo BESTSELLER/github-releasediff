@@ -2,7 +2,6 @@ package releasediff
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"sync"
 	"testing"
@@ -60,13 +59,14 @@ func TestMain(t *testing.T) {
 				panic(err)
 			}
 
-			diff := ghr.Diff()
-			fmt.Printf("%s/%s:\tThere are %d releases between %s and %s\n", testCase.Owner, testCase.Repo, diff, ghr.Release, ghr.Options.Release)
+			diff, releaseNotes := ghr.Diff()
+			t.Logf("%s/%s:\tThere are %d releases between %s and %s\n", testCase.Owner, testCase.Repo, diff, ghr.Release, ghr.Options.Release)
+			t.Logf("This is the release notes: \n%v", releaseNotes)
 			rate = resp.Rate
 
 		}(tc)
 
 	}
 	wg.Wait()
-	fmt.Printf("%v\n", rate)
+	t.Logf("%v\n", rate)
 }
