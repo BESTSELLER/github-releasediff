@@ -17,11 +17,12 @@ if err != nil {
   panic(err)
 }
 
-diff, resp, err := ghr.Diff()
+diff, releaseNotes, err := ghr.Diff()
 if err != nil {
   panic(err)
 }
-fmt.Printf("There are %d releases between %s and %s\n", diff, ghr.Release1, ghr.Release2)
+fmt.Printf("There are %d releases between %s and %s\n", diff, ghr.Release, ghr.Options.Release)
+fmt.Printf("This is the release notes: \n%v", releaseNotes)
 fmt.Printf("%v\n", resp.Rate)
 
 // Output:

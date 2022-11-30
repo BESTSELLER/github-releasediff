@@ -15,12 +15,13 @@ import (
 
 // GitHubReleases holds the two releases to compare
 type GitHubReleases struct {
-	Owner    string             // REQUIRED. Owner of the repo.
-	Repo     string             // REQUIRED. Name of the repo.
-	Release  string             // REQUIRED. Tag name of the release you want to check.
-	Client   *github.Client     // Github client used to make the calls to the github api.
-	Versions []*version.Version // Ordered list of all versions.
-	Options  *Options           // Optional options
+	Owner        string             // REQUIRED. Owner of the repo.
+	Repo         string             // REQUIRED. Name of the repo.
+	Release      string             // REQUIRED. Tag name of the release you want to check.
+	Client       *github.Client     // Github client used to make the calls to the github api.
+	Versions     []*version.Version // Ordered list of all versions.
+	ReleaseNotes map[string]string  // A map of releases with release notes.
+	Options      *Options           // Optional options
 }
 
 // Options is optional stuff that can be sent when calling "New"
@@ -32,8 +33,14 @@ type Options struct {
 	VerifyRelease      bool   // Whether to verify that the provided versions exists as a release.
 }
 
-func getVersions(releases []*github.RepositoryRelease) ([]*version.Version, error) {
+type ReleaseNote struct {
+	Version string
+	Body    string
+}
+
+func getVersions(releases []*github.RepositoryRelease) ([]*version.Version, *map[string]string, error) {
 	errorList := []string{}
+	releaseNotes := map[string]string{}
 	versions := make([]*version.Version, len(releases))
 	for i, raw := range releases {
 		v, err := version.NewVersion(raw.GetTagName())
@@ -42,15 +49,16 @@ func getVersions(releases []*github.RepositoryRelease) ([]*version.Version, erro
 			continue
 		}
 		versions[i] = v
+		releaseNotes[v.Original()] = raw.GetBody()
 	}
 
 	if len(errorList) > 0 {
-		return nil, fmt.Errorf("You have the following errors: %s", strings.Join(errorList, "\n"))
+		return nil, nil, fmt.Errorf("you have the following errors: %s", strings.Join(errorList, "\n"))
 	}
 
 	sort.Sort(version.Collection(versions))
 
-	return versions, nil
+	return versions, &releaseNotes, nil
 }
 
 // New creates a new GitHubReleases
@@ -66,7 +74,7 @@ func New(client *github.Client, owner string, repo string, release string, optio
 		missingFields = append([]string{"Release1"}, missingFields...)
 	}
 	if len(missingFields) > 0 {
-		return nil, nil, fmt.Errorf("Missing required field(s): %s", missingFields)
+		return nil, nil, fmt.Errorf("missing required field(s): %s", missingFields)
 	}
 
 	if options == nil {
@@ -87,15 +95,15 @@ func New(client *github.Client, owner string, repo string, release string, optio
 	}
 
 	if len(releases) == 0 {
-		return nil, nil, fmt.Errorf("There is no releases")
+		return nil, nil, fmt.Errorf("there is no releases")
 	}
 
-	versions, err := getVersions(releases)
+	versions, releaseNotes, err := getVersions(releases)
 	if err != nil {
 		return nil, nil, err
 	}
 	if len(versions) == 0 {
-		return nil, nil, fmt.Errorf("No versions was returned")
+		return nil, nil, fmt.Errorf("no versions was returned")
 	}
 
 	// if release2 is empty we will use the latest version
@@ -109,19 +117,26 @@ func New(client *github.Client, owner string, repo string, release string, optio
 	}
 
 	return &GitHubReleases{
-		Owner:    owner,
-		Repo:     repo,
-		Release:  release,
-		Client:   client,
-		Versions: versions,
-		Options:  options,
+		Owner:        owner,
+		Repo:         repo,
+		Release:      release,
+		Client:       client,
+		Versions:     versions,
+		ReleaseNotes: *releaseNotes,
+		Options:      options,
 	}, response, nil
 }
 
-// Diff will fetch all releases until a specific release
 func (ghr *GitHubReleases) Diff() int {
+	diff, _ := ghr.DiffWithReleaseNotes()
+	return diff
+}
+
+// Diff will fetch all releases until a specific release
+func (ghr *GitHubReleases) DiffWithReleaseNotes() (int, []ReleaseNote) {
+	releaseNotes := []ReleaseNote{}
 	if ghr.Release == ghr.Options.Release {
-		return 0
+		return 0, nil
 	}
 
 	index1, index2, indexesFound := 0, 0, 0
@@ -129,12 +144,23 @@ func (ghr *GitHubReleases) Diff() int {
 		if indexesFound == 2 {
 			break
 		}
-		if ghr.Versions[i].Original() == ghr.Release {
+
+		currentVersion := ghr.Versions[i]
+
+		if currentVersion.Original() == ghr.Release {
 			index1 = i
+			indexesFound++
 			continue
 		}
-		if ghr.Versions[i].Original() == ghr.Options.Release {
+
+		releaseNotes = append(releaseNotes, ReleaseNote{
+			Version: currentVersion.Original(),
+			Body:    ghr.ReleaseNotes[currentVersion.Original()],
+		})
+
+		if currentVersion.Original() == ghr.Options.Release {
 			index2 = i
+			indexesFound++
 			continue
 		}
 	}
@@ -144,7 +170,7 @@ func (ghr *GitHubReleases) Diff() int {
 		versionsBehind--
 	}
 
-	return versionsBehind
+	return versionsBehind, releaseNotes
 }
 
 // getAllReleases will fetch all releases
@@ -156,7 +182,7 @@ func getAllReleases(ctx context.Context, client *github.Client, owner string, re
 		return releases, response, err
 	}
 	if response.StatusCode != http.StatusOK {
-		return releases, response, fmt.Errorf("Response not correct expected: %v got: %v", http.StatusOK, response.StatusCode)
+		return releases, response, fmt.Errorf("response not correct expected: %v got: %v", http.StatusOK, response.StatusCode)
 	}
 
 	if response.NextPage != 0 {
