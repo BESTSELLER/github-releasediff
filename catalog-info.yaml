@@ -2,12 +2,12 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: github-releasediff
-  description: get number of releases between two releases.
+  description: Get number of releases between two releases in GitHub.
   tags:
     - golang
   annotations:
     github.com/project-slug:  BESTSELLER/github-releasediff
 spec:
-  type: service
+  type: library
   lifecycle: production
   owner: engineering-services
