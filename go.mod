@@ -1,6 +1,6 @@
 module github.com/BESTSELLER/github-releasediff
 
-go 1.19
+go 1.21.3
 
 require (
 	github.com/google/go-github/v32 v32.1.0
