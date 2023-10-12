@@ -18,7 +18,7 @@ approval_rules:
     if:
       has_successful_status:
         - "GitGuardian Security Checks"
-        - "Go Test"
+        - "Build-and-Test"
     requires:
       count: 0
   - name: es has approved
