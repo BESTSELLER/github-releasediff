@@ -13,3 +13,13 @@ updates:
       - "BESTSELLER/engineering-services"
     labels:
       - automerge
+      - dependencies
+  - package-ecosystem: "github-actions" # See documentation for possible values
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "monthly"
+    reviewers:
+      - "BESTSELLER/engineering-services"
+    labels:
+      - automerge
+      - dependencies
