@@ -3,7 +3,7 @@ name: Go Test
 on:
   push:
     branches:
-      - "*"
+      - '*'
 
 jobs:
   Build-and-Test:
