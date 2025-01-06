@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/google/go-github/v56/github"
+	"github.com/google/go-github/v68/github"
 	"golang.org/x/oauth2"
 )
 
