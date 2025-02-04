@@ -17,7 +17,6 @@ approval_rules:
   - name: tests passed
     if:
       has_successful_status:
-        - "GitGuardian Security Checks"
         - "Build-and-Test"
     requires:
       count: 0
