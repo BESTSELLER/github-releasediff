@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/google/go-github/v70/github"
+	"github.com/google/go-github/v75/github"
 	"github.com/hashicorp/go-version"
 )
 
