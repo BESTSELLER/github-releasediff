@@ -1,14 +1,14 @@
 policy:
   approval:
     - or:
-      - and:
-          - tests passed
-          - es has approved
-      - and:
-          - dependabot is making the PR
-          - or:
-              - tests passed
-              - es has approved
+        - and:
+            - tests passed
+            - developer-platform has approved
+        - and:
+            - dependabot is making the PR
+            - or:
+                - tests passed
+                - developer-platform has approved
   disapproval:
     requires:
       organizations:
@@ -20,11 +20,11 @@ approval_rules:
         - "Build-and-Test"
     requires:
       count: 0
-  - name: es has approved
+  - name: developer-platform has approved
     requires:
       count: 1
       teams:
-        - "BESTSELLER/engineering-services"
+        - "BESTSELLER/developer-platform"
   - name: dependabot is making the PR
     if:
       has_author_in:
