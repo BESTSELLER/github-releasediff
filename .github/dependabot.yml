@@ -9,8 +9,6 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "monthly"
-    reviewers:
-      - "BESTSELLER/engineering-services"
     labels:
       - automerge
       - dependencies
@@ -18,8 +16,6 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "monthly"
-    reviewers:
-      - "BESTSELLER/engineering-services"
     labels:
       - automerge
       - dependencies
