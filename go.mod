@@ -9,5 +9,3 @@ require (
 )
 
 require github.com/google/go-querystring v1.1.0 // indirect
-
-replace github.com/hashicorp/go-version => github.com/BESTSELLER/go-version v1.6.0
