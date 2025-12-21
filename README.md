@@ -1,5 +1,8 @@
 # github-releasediff
 
+> [!IMPORTANT]
+> This library is no longer maintained and is archived. It will eventually be deleted.
+
 Simple go package to get number of releases between two releases.
 
 The github client used is [google/go-github](https://github.com/google/go-github)
